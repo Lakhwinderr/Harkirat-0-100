@@ -1,8 +1,1 @@
-[
-    {
-        "id": 0,
-        "todo": "make the app",
-        "completed": false,
-        "description": "work on the todo app and finish off by today."
-    }
-]
+[{"id":0,"todo":"complete the todo app","description":"work on the assignment","completed":false}]

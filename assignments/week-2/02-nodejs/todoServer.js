@@ -40,62 +40,151 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  const todos = require("./files/todos.json")
+const express = require('express');
+const fs = require('fs')
+const app = express();
 
-  const app = express();
-  
 
-  app.use(express.json());
+app.use(express.json());
 
-  // get the todos 
-  app.get('/todos', (req, res) => {
-    res.status(200).json(todos);
+//function to readFile and return the data as arr of objects;
+
+const readTodos = (callback) => {
+  fs.readFile('files/todos.json', "utf-8", (err, data) => {
+    if (err) {
+      console.log('there is error in reading the data.json')
+      return callback(undefined);
+    }
+    return callback(JSON.parse(data));
   })
-
-  //function to find todo by id, returns the todo object from the array, if not returns nothing;
-  const getTodoById = (id) => {
-    let output;
-    todos.forEach(todo => {
-      if(todo.id === id){
-        output = todo;
-      }
-    })
-    return output;
-  }
+}
 
 
-  app.get('/todos/:id', (req, res) => {
-    const id = Number(req.params.id);
-    console.log(id)
-    const todo = getTodoById(id);
-    if(!todo){
+// get the todos 
+app.get('/todos', (req, res) => {
+  readTodos((data) => {
+    if (data) {
+      res.status(200).json(data);
+      return;
+    }
+    res.status(404).send("data missing")
+  });
+})
+
+//function to find todo by id, returns the todo object from the array, if not returns nothing;
+const getTodoById = (todos, id) => {
+  let output;
+  todos.forEach(todo => {
+    if (todo.id === id) {
+      output = todo;
+    }
+  })
+  return output;
+}
+
+
+app.get('/todos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  readTodos((data) => {
+    const todo = getTodoById(data, id);
+    if (!todo) {
       res.status(404).send("todo not found")
       return
     }
     res.status(200).json(todo)
   })
+})
 
-  //insert  a new todo in the existing data using post request
+//insert  a new todo in the existing data using post request
 
-  app.post("/todos", (req, res) => {
-    let  todo = req.body.todo;
-    const id = todos.length;
-    todo = {...todo, id: id}
-    todos.push(todo);
-    res.status(201).send("Added the todo successfully")
+app.post("/todos", (req, res) => {
+  let todo = req.body.todo;
+  
+  readTodos((data)=> {
+    const id = data.length;
+    todo = { ...todo, id: id }
+    let newData = [...data, todo];
+    fs.writeFile('files/todos.json', JSON.stringify(newData), (err)=> {
+        if(err){
+          res.status(500).send("problem adding the data")
+        }
+        res.status(201).send("Added the todo successfully")
+    })
   })
+})
 
 
-  //update the existing todo to be completed
-  app.put('/todos/:id', (req, res) => {
-    
+//update the existing todo to be completed
+const updateToDo = (todos, id) => {
+  for (const todo of todos) {
+    if (id === todo.id) {
+      todo.completed = !todo.completed;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+app.put('/todos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  readTodos((data) => {
+    let todos = data;
+    if (updateToDo(todos, id)) {
+      fs.writeFile('files/todos.json', JSON.stringify(todos), (err)=> {
+        if(err){
+          res.status(500).send("problem adding the data")
+          return;
+        }
+        res.status(200).send("updated the todo");
+    })
+    return;
+    }
+    res.status(404).send("todo not found");
   })
+})
 
+const deleteToDo = (todos, id) => {
+  let newtodos = [];
+  let flag = false;
+  for (const todo of todos) {
+    if(todo.id < id){
+      newtodos.push(todo);
+    }
+    else if (todo.id === id) {
+      flag = true;
+    } else{
+      newtodos.push({...todo, id: todo.id-1})
+    }
+  }
 
-  app.listen(3000, () => {
-    console.log("the server is running")
+  if (flag) {
+    fs.writeFile('files/todos.json', JSON.stringify(newtodos), (err) => {
+      if (err) {
+        console.log("error updating new data");
+        return;
+      }
+      console.log("updated the data successfully")
+    })
+  }
+
+  return flag;
+}
+
+app.delete('/todos/:id', (req, res) => {
+  const id = Number(req.params.id);
+  readTodos(data => {
+    if (deleteToDo(data, id)) {
+      res.status(200).send("deleted the todo");
+      return;
+    }
+    res.status(404).send("todo not found")
   })
   
-  // module.exports = app;
+})
+
+app.listen(3000, () => {
+  console.log("the server is running")
+})
+
+// module.exports = app;
