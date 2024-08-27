@@ -1,0 +1,8 @@
+[
+    {
+        "id": 0,
+        "todo": "make the app",
+        "completed": false,
+        "description": "work on the todo app and finish off by today."
+    }
+]
