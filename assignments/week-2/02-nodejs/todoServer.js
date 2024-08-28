@@ -44,7 +44,6 @@ const express = require('express');
 const fs = require('fs')
 const app = express();
 
-
 app.use(express.json());
 
 //function to readFile and return the data as arr of objects;
@@ -58,7 +57,6 @@ const readTodos = (callback) => {
     return callback(JSON.parse(data));
   })
 }
-
 
 // get the todos 
 app.get('/todos', (req, res) => {
@@ -99,7 +97,6 @@ app.get('/todos/:id', (req, res) => {
 
 app.post("/todos", (req, res) => {
   let todo = req.body.todo;
-  
   readTodos((data)=> {
     const id = data.length;
     todo = { ...todo, id: id }
@@ -113,7 +110,6 @@ app.post("/todos", (req, res) => {
   })
 })
 
-
 //update the existing todo to be completed
 const updateToDo = (todos, id) => {
   for (const todo of todos) {
@@ -122,7 +118,6 @@ const updateToDo = (todos, id) => {
       return true;
     }
   }
-
   return false;
 }
 
@@ -153,7 +148,7 @@ const deleteToDo = (todos, id) => {
     }
     else if (todo.id === id) {
       flag = true;
-    } else{
+    } else if(todo.id > id && todo.id < todos.length){
       newtodos.push({...todo, id: todo.id-1})
     }
   }
@@ -167,7 +162,6 @@ const deleteToDo = (todos, id) => {
       console.log("updated the data successfully")
     })
   }
-
   return flag;
 }
 
@@ -179,12 +173,15 @@ app.delete('/todos/:id', (req, res) => {
       return;
     }
     res.status(404).send("todo not found")
-  })
-  
+  })  
+})
+
+app.use((req,res,next) => {
+  res.status(404).send("Route not defined")
 })
 
 app.listen(3000, () => {
   console.log("the server is running")
 })
 
-// module.exports = app;
+module.exports = app;
