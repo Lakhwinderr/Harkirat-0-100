@@ -11,6 +11,7 @@ const User = mongoose.model('Users', { name: String, email: String, password: St
 //     name: "Lakhwinder Singh"
 // });
 // user.save();
+
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {

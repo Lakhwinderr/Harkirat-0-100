@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const jwtPassword = 'secret';
-
+const z = require("zod")
 
 /**
  * Generates a JWT for a given username and password.
@@ -13,8 +13,26 @@ const jwtPassword = 'secret';
  *                        Returns null if the username is not a valid email or
  *                        the password does not meet the length requirement.
  */
+
+
 function signJwt(username, password) {
     // Your code here
+    const user = {
+        username: username,
+        password: password
+    }
+    const mySchema = z.object(
+        {
+            username: z.string().email(),
+            password: z.string()
+        }
+    )
+
+    if(mySchema.safeParse(user).success && user.password.length > 5){
+        return jwt.sign(user,jwtPassword)
+    }
+
+    return null;
 }
 
 /**
@@ -27,6 +45,12 @@ function signJwt(username, password) {
  */
 function verifyJwt(token) {
     // Your code here
+    try {
+        jwt.verify(token, jwtPassword);
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 /**
@@ -38,6 +62,7 @@ function verifyJwt(token) {
  */
 function decodeJwt(token) {
     // Your code here
+    return jwt.decode(token) ? true : false;
 }
 
 
